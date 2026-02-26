@@ -1,0 +1,3042 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qyu的专用多模型对比助手</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-light">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-dark" disabled>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        /* ========== CSS变量 - 主题系统 ========== */
+        :root {
+            --bg-color: #f5f7fa;
+            --side-bg: #ffffff;
+            --card-bg: #ffffff;
+            --card-border: #e4e7ed;
+            --card-header: #f5f7fa;
+            --text-primary: #1a1a1a;
+            --text-secondary: #505050;
+            --text-placeholder: #a0a0a0;
+            --primary-color: #409eff;
+            --primary-hover: #66b1ff;
+            --primary-active: #3a8ee6;
+            --success-color: #67c23a;
+            --warning-color: #e6a23c;
+            --danger-color: #f56c6c;
+            --user-msg-bg: #409eff;
+            --user-msg-text: #ffffff;
+            --ai-msg-bg: #f0f2f5;
+            --ai-msg-text: #0a0a0a;
+            --input-bg: #ffffff;
+            --input-border: #dcdfe6;
+            --sidebar-width: 320px;
+            --font-size: 14px;
+            --radius: 8px;
+        }
+
+        /* 护眼模式 - 豆沙绿风格 */
+        [data-theme="eye-care"] {
+            --bg-color: #cce8cf;
+            --side-bg: #d6ead6;
+            --card-bg: #e8f4e8;
+            --card-border: #a8d4a8;
+            --card-header: #d6ead6;
+            --text-primary: #0a3d0a;
+            --text-secondary: #2d5a2d;
+            --primary-color: #4a9f4a;
+            --primary-hover: #5ab35a;
+            --primary-active: #3a8a3a;
+            --user-msg-bg: #4a9f4a;
+            --user-msg-text: #ffffff;
+            --ai-msg-bg: #d6ead6;
+            --ai-msg-text: #0a2d0a;
+            --input-bg: #e8f4e8;
+            --input-border: #a8d4a8;
+        }
+
+        /* 深色模式 - 深蓝黑风格 */
+        [data-theme="dark"] {
+            --bg-color: #0d1117;
+            --side-bg: #161b22;
+            --card-bg: #21262d;
+            --card-border: #30363d;
+            --card-header: #161b22;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --primary-color: #58a6ff;
+            --primary-hover: #79b8ff;
+            --primary-active: #478be6;
+            --user-msg-bg: #238636;
+            --user-msg-text: #ffffff;
+            --ai-msg-bg: #30363d;
+            --ai-msg-text: #f0f6fc;
+            --input-bg: #0d1117;
+            --input-border: #30363d;
+        }
+
+        /* ========== 全局样式 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: var(--font-size);
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* ========== 侧边栏 ========== */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--side-bg);
+            border-right: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            transition: transform 0.3s, width 0.3s;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+            width: 0;
+        }
+
+        .sidebar-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-header);
+            flex-shrink: 0;
+        }
+
+        .sidebar-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        /* ========== 配置面板 ========== */
+        .config-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .config-header {
+            padding: 10px 14px;
+            background: var(--card-header);
+            border-bottom: 1px solid var(--card-border);
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+        }
+
+        .config-header:hover {
+            background: var(--card-border);
+        }
+
+        .config-header .arrow {
+            transition: transform 0.3s;
+        }
+
+        .config-header.collapsed .arrow {
+            transform: rotate(-90deg);
+        }
+
+        .config-body {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .config-body.hidden {
+            display: none;
+        }
+
+        /* ========== 表单元素 ========== */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .form-input {
+            padding: 8px 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 6px;
+            font-size: 13px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-placeholder);
+        }
+
+        .form-textarea {
+            min-height: 60px;
+            resize: vertical;
+            font-family: inherit;
+            line-height: 1.5;
+        }
+
+        .form-hint {
+            font-size: 11px;
+            color: var(--text-placeholder);
+            line-height: 1.4;
+        }
+
+        .form-select {
+            cursor: pointer;
+        }
+
+        /* ========== 按钮 ========== */
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: var(--card-border);
+            color: var(--text-primary);
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: #fff;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* ========== 工作流配置项 ========== */
+        .workflow-item {
+            padding: 10px;
+            background: var(--bg-color);
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .workflow-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .workflow-item-title {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* ========== 主内容区 ========== */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            min-width: 0;
+            position: relative;
+        }
+
+        /* ========== 顶部工具栏 ========== */
+        .toolbar {
+            padding: 8px 16px;
+            background: var(--side-bg);
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toolbar-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .toolbar-btn:hover {
+            background: var(--primary-color);
+            color: #fff;
+            border-color: var(--primary-color);
+        }
+
+        .toolbar-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ========== 聊天窗口容器 ========== */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+            padding: 8px;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        /* ========== 单个聊天窗口 ========== */
+        .chat-window {
+            flex: 1;
+            min-width: 200px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ========== 数据源选择下拉框 ========== */
+        .source-select {
+            padding: 4px 8px;
+            border: 1px solid var(--card-border);
+            border-radius: 4px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            max-width: 120px;
+            text-overflow: ellipsis;
+        }
+
+        .source-select:hover {
+            border-color: var(--primary-color);
+        }
+
+        .source-select:focus {
+            border-color: var(--primary-color);
+        }
+
+        /* ========== 拖拽分隔线 ========== */
+        .chat-resizer {
+            width: 8px;
+            min-width: 8px;
+            flex-shrink: 0;
+            cursor: col-resize;
+            position: relative;
+            background: transparent;
+        }
+        .chat-resizer::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 2px;
+            height: 48px;
+            border-radius: 2px;
+            background: var(--card-border);
+            transition: background 0.2s, height 0.2s;
+        }
+        .chat-resizer:hover::after, .chat-resizer.active::after {
+            background: var(--primary-color);
+            height: 72px;
+        }
+
+        /* ========== 聊天窗口标题 ========== */
+        .chat-header {
+            padding: 8px 12px;
+            background: var(--card-header);
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            gap: 8px;
+        }
+
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chat-header-title {
+            font-weight: 600;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-header-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .chat-header-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .chat-header-btn:hover {
+            background: var(--card-border);
+            color: var(--text-primary);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 0;
+        }
+
+        /* ========== 消息样式 ========== */
+        .message {
+            max-width: 90%;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: var(--font-size);
+            line-height: 1.6;
+            word-wrap: break-word;
+            white-space: normal;
+            position: relative;
+        }
+
+        .message-user {
+            background: var(--user-msg-bg);
+            color: var(--user-msg-text);
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-ai {
+            background: var(--ai-msg-bg);
+            color: var(--ai-msg-text);
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+            padding-bottom: 10px;
+        }
+
+        .message-ai p {
+            margin: 0 0 8px 0;
+            line-height: 1.6;
+        }
+        .message-ai p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message-loading {
+            opacity: 0.85;
+        }
+
+        /* 消息操作按钮工具栏 */
+        .msg-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+            margin-top: 6px;
+            padding-top: 4px;
+            border-top: 1px dashed var(--card-border);
+            line-height: 1;
+        }
+
+        .msg-action-btn {
+            padding: 2px 8px;
+            font-size: 11px;
+            background: transparent;
+            border: 1px solid var(--card-border);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            line-height: 1.2;
+        }
+
+        .msg-action-btn:hover {
+            background: var(--primary-color);
+            color: #fff;
+            border-color: var(--primary-color);
+        }
+
+        .msg-action-btn.retry-btn:hover {
+            background: var(--warning-color);
+            border-color: var(--warning-color);
+        }
+
+        /* ========== Markdown渲染样式 ========== */
+        .message-ai h1, .message-ai h2, .message-ai h3, .message-ai h4 {
+            margin: 10px 0 6px 0;
+            font-weight: 600;
+            line-height: 1.4;
+            color: var(--text-primary);
+        }
+        .message-ai h1 { font-size: 1.4em; border-bottom: 1px solid var(--card-border); padding-bottom: 6px; }
+        .message-ai h2 { font-size: 1.25em; }
+        .message-ai h3 { font-size: 1.1em; }
+        .message-ai h4 { font-size: 1em; }
+        .message-ai ul, .message-ai ol { margin: 4px 0; padding-left: 20px; }
+        .message-ai li { margin: 2px 0; line-height: 1.5; }
+        .message-ai code {
+            background: var(--card-border);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 0.9em;
+        }
+        .message-ai pre {
+            margin: 10px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+        }
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px 12px;
+            background: #1e1e2e;
+            font-size: 11px;
+            color: #a0a0b8;
+            font-family: Consolas, Monaco, monospace;
+        }
+        .code-copy-btn {
+            padding: 1px 8px;
+            font-size: 11px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 3px;
+            color: #ccc;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .code-copy-btn:hover { background: rgba(255,255,255,0.25); color: #fff; }
+        .message-ai pre code {
+            display: block;
+            background: #f8f9fc;
+            padding: 12px 14px;
+            overflow-x: auto;
+            font-size: 0.88em;
+            line-height: 1.6;
+            border-radius: 0;
+        }
+        [data-theme="dark"] .message-ai pre code { background: #161b22; }
+        [data-theme="eye-care"] .message-ai pre code { background: #e0ede0; }
+        .message-ai pre code.hljs { background: inherit; }
+
+        /* ========== 窗口数量控件 ========== */
+        .win-count-ctrl {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            padding: 2px 5px;
+        }
+        .win-count-btn {
+            width: 22px; height: 22px;
+            border: none; border-radius: 4px;
+            background: transparent;
+            color: var(--text-primary);
+            cursor: pointer; font-size: 15px; font-weight: bold;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s;
+        }
+        .win-count-btn:hover:not(:disabled) { background: var(--primary-color); color: #fff; }
+        .win-count-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .win-count-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); min-width: 30px; text-align: center; }
+
+        /* ========== 请求状态 ========== */
+        .req-status {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 11px; color: var(--text-secondary);
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 6px; padding: 3px 9px;
+            min-width: 70px; justify-content: center;
+            transition: all 0.3s;
+        }
+        .req-status.running { border-color: var(--primary-color); color: var(--primary-color); }
+        .req-status.done { border-color: var(--success-color); color: var(--success-color); }
+        .req-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+        .req-status.running .req-dot { animation: blink 1s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+        /* ========== 联网来源面板 ========== */
+        .source-panel {
+            margin-top: 12px;
+            border-top: 1px dashed var(--card-border);
+            padding-top: 10px;
+            font-size: 12px;
+        }
+        .search-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .search-status:hover {
+            transform: translateX(2px);
+        }
+        .search-status.searched {
+            background: linear-gradient(135deg, rgba(64,158,255,0.15) 0%, rgba(64,158,255,0.08) 100%);
+            border: 1px solid rgba(64,158,255,0.4);
+            color: var(--primary-color);
+        }
+        .search-status.searched:hover {
+            background: linear-gradient(135deg, rgba(64,158,255,0.2) 0%, rgba(64,158,255,0.12) 100%);
+        }
+        .search-status.no-search {
+            background: var(--bg-color);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            cursor: default;
+        }
+        .search-count {
+            background: var(--primary-color);
+            color: #fff;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .source-expand-btn {
+            margin-left: auto;
+            font-size: 11px;
+            opacity: 0.9;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .source-expand-btn::after {
+            content: '▸';
+            transition: transform 0.3s;
+            display: inline-block;
+        }
+        .source-panel.open .source-expand-btn::after {
+            transform: rotate(90deg);
+        }
+        .source-list {
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 10px;
+            padding-left: 8px;
+            border-left: 3px solid var(--primary-color);
+            margin-left: 4px;
+        }
+        .source-panel.open .source-list {
+            display: flex;
+            animation: slideDown 0.25s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .source-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+        .source-item:hover {
+            border-color: var(--primary-color);
+            background: var(--card-header);
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(64,158,255,0.15);
+        }
+        .source-num {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1px;
+        }
+        .source-info { flex: 1; min-width: 0; }
+        .source-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .source-url {
+            font-size: 10px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+        }
+        .typing-dots { display: inline-flex; align-items: center; gap: 4px; padding: 2px 0; }
+        .typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--text-secondary); animation: tdot 1.2s infinite ease-in-out; }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes tdot { 0%,80%,100%{transform:translateY(0);opacity:.4} 40%{transform:translateY(-6px);opacity:1} }
+        .message-ai blockquote {
+            border-left: 3px solid var(--primary-color);
+            padding-left: 12px;
+            margin: 10px 0;
+            color: var(--text-secondary);
+        }
+        .message-ai table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 10px 0;
+        }
+        .message-ai th, .message-ai td {
+            border: 1px solid var(--card-border);
+            padding: 8px 12px;
+            text-align: left;
+        }
+        .message-ai th {
+            background: var(--card-header);
+            font-weight: 600;
+        }
+        .message-ai tr:nth-child(even) { background: var(--card-header); }
+        .message-ai hr { border: none; border-top: 1px solid var(--card-border); margin: 12px 0; }
+        .message-ai strong { font-weight: 600; }
+        .message-ai em { font-style: italic; }
+        .message-ai a { color: var(--primary-color); text-decoration: none; }
+        .message-ai a:hover { text-decoration: underline; }
+
+        /* ========== 底部输入区 ========== */
+        .input-area {
+            padding: 12px;
+            background: var(--side-bg);
+            border-top: 1px solid var(--card-border);
+            flex-shrink: 0;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        .input-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-textarea {
+            width: 100%;
+            min-height: 48px;
+            max-height: 120px;
+            padding: 10px 14px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            font-size: var(--font-size);
+            font-family: inherit;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            outline: none;
+            resize: none;
+            line-height: 1.5;
+        }
+
+        .input-textarea:focus {
+            border-color: var(--primary-color);
+        }
+
+        .input-textarea::placeholder {
+            color: var(--text-placeholder);
+        }
+
+        .input-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .char-count {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .send-btn {
+            padding: 0 28px;
+            font-size: 14px;
+            height: 48px;
+        }
+
+        /* ========== 总结窗口悬浮按钮 ========== */
+        .summary-toggle-btn {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 80px;
+            background: var(--primary-color);
+            color: #fff;
+            border: none;
+            border-radius: 8px 0 0 8px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 200;
+            transition: all 0.3s;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .summary-toggle-btn:hover {
+            width: 44px;
+            background: var(--primary-hover);
+        }
+
+        .summary-toggle-btn.hidden {
+            transform: translateY(-50%) translateX(100%);
+        }
+
+        /* ========== 总结侧边栏 ========== */
+        .summary-sidebar {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 520px;
+            height: 100vh;
+            background: var(--side-bg);
+            border-left: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s;
+            z-index: 199;
+        }
+
+        .summary-sidebar.show {
+            transform: translateX(0);
+        }
+
+        .summary-sidebar-header {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-header);
+        }
+
+        .summary-sidebar-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .summary-sidebar-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .summary-chat-window {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .summary-chat-messages {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .summary-footer {
+            padding: 10px 12px;
+            border-top: 1px solid var(--card-border);
+            background: var(--card-header);
+        }
+
+        .summary-info {
+            padding: 10px 12px;
+            background: var(--bg-color);
+            border-bottom: 1px solid var(--card-border);
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ========== Toast提示 ========== */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .toast.show { opacity: 1; }
+        .toast-success { background: var(--success-color); color: #fff; }
+        .toast-error { background: var(--danger-color); color: #fff; }
+        .toast-warning { background: var(--warning-color); color: #fff; }
+
+        /* ========== 滚动条 ========== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-placeholder); }
+
+        /* ========== 平台标签 ========== */
+        .platform-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+        .platform-tag.coze { background: #e3f2fd; color: #1976d2; }
+        .platform-tag.deepseek { background: #fff3e0; color: #e65100; }
+        .platform-tag.openai { background: #e8f5e9; color: #2e7d32; }
+        .platform-tag.moonshot { background: #fce4ec; color: #c2185b; }
+        .platform-tag.qwen { background: #f3e5f5; color: #7b1fa2; }
+        .platform-tag.zhipu { background: #e0f7fa; color: #00838f; }
+    </style>
+</head>
+<body>
+    <!-- Toast提示 -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 侧边栏 -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-title">⚙️ 配置中心</span>
+        </div>
+        <div class="sidebar-content">
+            <!-- API配置（隐藏） -->
+            <div style="display:none;">
+            <!-- Coze 对话流配置（隐藏） -->
+            <div class="config-section" style="display:none;">
+                <div class="config-header" data-section="coze-config">
+                    <span>🤖 Coze 对话流</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div class="config-body" id="coze-config">
+                    <div class="form-group">
+                        <label class="form-label">API Token</label>
+                        <input type="password" class="form-input" id="cozeApiToken" placeholder="粘贴Coze API Token">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">接口地址</label>
+                        <input type="text" class="form-input" id="cozeBaseUrl" value="https://api.coze.cn">
+                    </div>
+                    <div class="form-group" style="display:none;">
+                        <label class="form-label">Bot ID</label>
+                        <input type="text" class="form-input" id="cozeBotId" placeholder="对话流必填，URL中 bot/ 后的数字">
+                        <div class="form-hint" style="margin-top:2px;">对话流调用必须填写，普通工作流可不填</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">输入变量名</label>
+                        <input type="text" class="form-input" id="cozeInputVariable" value="USER_INPUT" placeholder="对话流固定为 USER_INPUT">
+                        <div class="form-hint" style="margin-top:2px;">对话流固定填 USER_INPUT；普通工作流填开始节点的变量名</div>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-secondary);margin:10px 0 6px;font-weight:600;">Coze工作流（4个）</div>
+                    <div id="cozeWorkflowList"></div>
+                    <button class="btn btn-primary btn-block" id="saveCozeConfig" style="margin-top:8px;">💾 保存Coze配置</button>
+                </div>
+            </div>
+
+            <!-- 第三方 API 配置（隐藏） -->
+            <div class="config-section" style="display:none;">
+                <div class="config-header" data-section="platform-config">
+                    <span>🔌 第三方API（OpenAI兼容）</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div class="config-body" id="platform-config">
+                    <div class="form-hint" style="margin-bottom:6px;">填写地址和Key后点击连接，自动获取模型列表</div>
+                    <div id="platformList"></div>
+                </div>
+            </div>
+            </div>
+
+            <!-- 显示设置 -->
+            <div class="config-section">
+                <div class="config-header" data-section="display-config">
+                    <span>🎨 显示设置</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div class="config-body" id="display-config">
+                    <div class="form-group">
+                        <label class="form-label">主题模式</label>
+                        <div class="btn-group">
+                            <button class="btn btn-secondary theme-btn" data-theme="default">默认</button>
+                            <button class="btn btn-secondary theme-btn" data-theme="eye-care">护眼</button>
+                            <button class="btn btn-secondary theme-btn" data-theme="dark">深色</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">字体大小</label>
+                        <div class="btn-group">
+                            <button class="btn btn-secondary font-btn" data-size="13px">小</button>
+                            <button class="btn btn-secondary font-btn" data-size="14px">中</button>
+                            <button class="btn btn-secondary font-btn" data-size="16px">大</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="display:flex;justify-content:space-between;">
+                            <span>行间距</span><span id="lineHeightVal" style="color:var(--primary-color);font-weight:600;">1.6</span>
+                        </label>
+                        <input type="range" id="lineHeightSlider" min="1.2" max="2.4" step="0.1" value="1.6"
+                            style="width:100%;accent-color:var(--primary-color);">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="display:flex;justify-content:space-between;">
+                            <span>字间距</span><span id="letterSpacingVal" style="color:var(--primary-color);font-weight:600;">0px</span>
+                        </label>
+                        <input type="range" id="letterSpacingSlider" min="0" max="4" step="0.5" value="0"
+                            style="width:100%;accent-color:var(--primary-color);">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="display:flex;justify-content:space-between;">
+                            <span>段落间距</span><span id="paraSpacingVal" style="color:var(--primary-color);font-weight:600;">4px</span>
+                        </label>
+                        <input type="range" id="paraSpacingSlider" min="0" max="20" step="1" value="4"
+                            style="width:100%;accent-color:var(--primary-color);">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据管理 -->
+            <div class="config-section">
+                <div class="config-header" data-section="data-config">
+                    <span>📂 数据管理</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div class="config-body" id="data-config">
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="importConfig">📥 导入配置</button>
+                        <button class="btn btn-secondary" id="exportChat">📤 导出聊天</button>
+                    </div>
+                    <input type="file" id="importConfigFile" accept=".json" style="display:none">
+                    <div class="btn-group" style="margin-top:8px;">
+                        <button class="btn btn-danger" id="clearChat">🗑️ 清空聊天</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <button class="toolbar-btn" id="toggleSidebar" title="切换侧边栏">☰</button>
+                <span class="toolbar-title">Qyu的专用多模型对比助手</span>
+            </div>
+            <div class="toolbar-right">
+                <div class="win-count-ctrl" title="并行窗口数量">
+                    <button class="win-count-btn" id="wcDec">−</button>
+                    <span class="win-count-label" id="wcLabel">3 窗口</span>
+                    <button class="win-count-btn" id="wcInc">+</button>
+                </div>
+                <div class="req-status" id="reqStatus">
+                    <span class="req-dot"></span>
+                    <span id="reqText">就绪</span>
+                </div>
+                <span style="font-size: 11px; color: var(--text-secondary);">状态：</span>
+                <span id="configStatus" style="font-size: 11px; color: var(--danger-color);">未配置</span>
+            </div>
+        </div>
+
+        <div class="chat-container" id="chatContainer"></div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <div class="input-box">
+                    <textarea class="input-textarea" id="userInput" placeholder="输入问题，所有模型将同时响应...（Shift+Enter换行）"></textarea>
+                    <div class="input-footer">
+                        <span class="char-count" id="charCount">0 字</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary send-btn" id="sendBtn">发送</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 总结窗口 -->
+    <button class="summary-toggle-btn" id="summaryToggleBtn">
+        <span>📝</span><span>总</span><span>结</span>
+    </button>
+
+    <div class="summary-sidebar" id="summarySidebar">
+        <div class="summary-sidebar-header">
+            <span class="summary-sidebar-title">📝 内容总结</span>
+            <button class="toolbar-btn" id="closeSummarySidebar" style="width:24px;height:24px;">×</button>
+        </div>
+        <div class="summary-info">选择模型后点击生成，收集前3个窗口的回答进行汇总。</div>
+        <div class="summary-sidebar-content">
+            <div class="summary-chat-window">
+                <div class="summary-chat-messages" id="messages-summary"></div>
+            </div>
+        </div>
+        <div class="summary-footer">
+            <div class="form-group" style="margin-bottom:8px;">
+                <label class="form-label" style="font-size:11px;">总结模型</label>
+                <select class="form-input form-select" id="summarySourceSelect" style="font-size:12px;"></select>
+            </div>
+            <button class="btn btn-primary btn-block" id="generateSummaryBtn">生成总结</button>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 默认配置 ====================
+        const DEFAULT_CONFIG = {
+            // Coze配置
+            coze: {
+                apiToken: '',
+                baseUrl: 'https://api.coze.cn',
+                botId: '',
+                inputVariable: 'USER_INPUT',  // 输入变量名，与工作流开始节点一致
+                workflows: [
+                    { id: '1', name: '工作流1', workflowId: '', systemPrompt: '', type: 'chatflow' },
+                    { id: '2', name: '工作流2', workflowId: '', systemPrompt: '', type: 'chatflow' },
+                    { id: '3', name: '工作流3', workflowId: '', systemPrompt: '', type: 'chatflow' },
+                    { id: '4', name: '总结工作流', workflowId: '', systemPrompt: '你是一个专业的内容总结专家，需要基于用户提供的多个模型的回答，提炼核心观点，对比不同模型的回答差异，给出清晰易懂的总结。', type: 'chatflow' }
+                ]
+            },
+            // 多平台API配置（3个可自定义）
+            platforms: [
+                { id: '1', name: '平台1', baseUrl: '', apiKey: '', model: '', models: [], connected: false },
+                { id: '2', name: '平台2', baseUrl: '', apiKey: '', model: '', models: [], connected: false },
+                { id: '3', name: '平台3', baseUrl: '', apiKey: '', model: '', models: [], connected: false }
+            ],
+            // 窗口配置：每个窗口选择使用Coze还是其他平台
+            windows: [
+                { id: '1', source: 'coze', cozeIndex: 0, platformIndex: -1, systemPrompt: '' },
+                { id: '2', source: 'coze', cozeIndex: 1, platformIndex: -1, systemPrompt: '' },
+                { id: '3', source: 'coze', cozeIndex: 2, platformIndex: -1, systemPrompt: '' },
+                { id: '4', source: 'coze', cozeIndex: 3, platformIndex: -1, systemPrompt: '' }
+            ],
+            theme: 'default',
+            fontSize: '14px'
+        };
+
+        // ==================== 加载配置 ====================
+        let config = JSON.parse(localStorage.getItem('multiModelConfig')) || JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+        let chatHistories = JSON.parse(localStorage.getItem('multiModelChatHistories')) || {};
+        let latestQuestion = localStorage.getItem('multiModelLatestQuestion') || '';
+        let abortControllers = {};
+        // 每个窗口的 CONVERSATION_NAME，首次生成后固定，靠它让 Coze 记忆节点识别同一对话
+        var cozeConversationIds = {};
+
+        function getConvName(windowId) {
+            if (!cozeConversationIds[windowId]) {
+                cozeConversationIds[windowId] = 'win' + windowId + '_' + Math.random().toString(36).slice(2, 8);
+                console.log('%c[对话名称]', 'color:#e6a23c;font-weight:bold', '窗口' + windowId + '新建:', cozeConversationIds[windowId]);
+            }
+            return cozeConversationIds[windowId];
+        }
+
+        // ==================== 工具函数 ====================
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast toast-${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function saveConfig() {
+            localStorage.setItem('multiModelConfig', JSON.stringify(config));
+        }
+
+        function saveChatHistories() {
+            localStorage.setItem('multiModelChatHistories', JSON.stringify(chatHistories));
+        }
+
+        function saveLatestQuestion() {
+            localStorage.setItem('multiModelLatestQuestion', latestQuestion);
+        }
+
+        // ==================== 配置兼容性检查 ====================
+        function ensureConfigStructure() {
+            let needsSave = false;
+            
+            // 确保coze配置存在
+            if (!config.coze || typeof config.coze !== 'object') {
+                config.coze = JSON.parse(JSON.stringify(DEFAULT_CONFIG.coze));
+                needsSave = true;
+            }
+            
+            // 确保coze.inputVariable存在
+            if (!config.coze.inputVariable) {
+                config.coze.inputVariable = 'user_input';
+                needsSave = true;
+            }
+            
+            // 确保coze.workflows存在且有4个
+            if (!config.coze.workflows || !Array.isArray(config.coze.workflows) || config.coze.workflows.length < 4) {
+                config.coze.workflows = JSON.parse(JSON.stringify(DEFAULT_CONFIG.coze.workflows));
+                needsSave = true;
+            }
+            
+            // 确保platforms配置存在（数组格式）
+            if (!config.platforms || !Array.isArray(config.platforms) || config.platforms.length < 3) {
+                config.platforms = JSON.parse(JSON.stringify(DEFAULT_CONFIG.platforms));
+                needsSave = true;
+            }
+            
+            // 确保每个平台的配置完整
+            config.platforms.forEach((p, i) => {
+                if (!p.models) p.models = [];
+                if (!p.connected) p.connected = false;
+                if (!p.model) p.model = '';
+            });
+            
+            // 确保windows配置存在
+            if (!config.windows || !Array.isArray(config.windows) || config.windows.length < 4) {
+                config.windows = JSON.parse(JSON.stringify(DEFAULT_CONFIG.windows));
+                needsSave = true;
+            }
+            
+            // 确保windows有platformIndex字段
+            config.windows.forEach(w => {
+                if (w.platformIndex === undefined) w.platformIndex = -1;
+            });
+            
+            if (needsSave) {
+                saveConfig();
+                console.log('配置已更新为最新结构');
+            }
+        }
+        
+        // 执行兼容性检查
+        ensureConfigStructure();
+
+        // ==================== Markdown渲染 ====================
+        // 使用 marked v9 + highlight.js
+        marked.use({
+            breaks: true,
+            gfm: true,
+            renderer: {
+                code({ text, lang }) {
+                    const language = lang || 'plaintext';
+                    let hl;
+                    try {
+                        hl = hljs.getLanguage(language)
+                            ? hljs.highlight(text, { language, ignoreIllegals: true }).value
+                            : hljs.highlightAuto(text).value;
+                    } catch(e) { hl = escapeHtml(text); }
+                    return `<pre><div class="code-header"><span>${escapeHtml(language)}</span><button class="code-copy-btn" data-code="${encodeURIComponent(text)}">复制</button></div><code class="hljs">${hl}</code></pre>`;
+                }
+            }
+        });
+
+        // 代码块复制按钮（事件委托，避免 onclick 内联）
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('code-copy-btn')) {
+                const code = decodeURIComponent(e.target.dataset.code || '');
+                navigator.clipboard.writeText(code).then(function() {
+                    e.target.textContent = '已复制✓';
+                    setTimeout(function() { e.target.textContent = '复制'; }, 1500);
+                });
+            }
+        });
+
+        function renderMarkdown(text) {
+            if (!text) return '';
+            try {
+                // 移除 [联网搜索] 标记（如果存在）
+                let processedText = text.replace(/^\[联网搜索\]\s*/i, '');
+                
+                // 配置 marked：让所有链接在新标签页打开
+                const renderer = new marked.Renderer();
+                const originalLinkRenderer = renderer.link;
+                renderer.link = function(href, title, text) {
+                    const link = originalLinkRenderer.call(this, href, title, text);
+                    // 添加 target="_blank" 和 rel="noopener noreferrer"
+                    return link.replace('<a ', '<a target="_blank" rel="noopener noreferrer" ');
+                };
+                
+                // 不再压缩空行，让Markdown自然渲染
+                return marked.parse(processedText, { renderer });
+            }
+            catch(e) { return escapeHtml(text); }
+        }
+
+        // ==================== 从回答中提取联网搜索来源 ====================
+        function extractWebSources(content) {
+            if (!content) return { hasSearch: false, sources: [] };
+            
+            const sources = [];
+            let hasSearchMark = false;
+            
+            // 1. 检测 [联网搜索] 标记
+            if (/^\[联网搜索\]/i.test(content.trim())) {
+                hasSearchMark = true;
+                console.log('[联网检测] 发现 [联网搜索] 标记');
+            }
+            
+            // 2. 提取所有 Markdown 链接 [标题](URL)
+            const mdLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
+            let match;
+            while ((match = mdLinkRegex.exec(content)) !== null) {
+                const title = match[1].trim();
+                const url = match[2].trim();
+                // 过滤掉一些常见的非搜索来源链接
+                if (!url.includes('example.com') && 
+                    !url.includes('placeholder') &&
+                    title.length > 0 && 
+                    title.length < 200) {
+                    sources.push({ url, title });
+                }
+            }
+            
+            // 3. 提取纯 URL（不在 Markdown 格式中的）
+            const urlRegex = /(?<![!\[])(https?:\/\/[^\s<>\[\]()'"`]+)/g;
+            while ((match = urlRegex.exec(content)) !== null) {
+                const url = match[1].trim();
+                // 去除末尾标点
+                const cleanUrl = url.replace(/[.,;:!?)\]}>]+$/, '');
+                // 避免重复
+                if (!sources.find(s => s.url === cleanUrl)) {
+                    sources.push({ url: cleanUrl, title: cleanUrl });
+                }
+            }
+            
+            // 去重
+            const uniqueSources = sources.filter((s, i, arr) => 
+                arr.findIndex(x => x.url === s.url) === i
+            );
+            
+            // 判断是否进行了联网搜索：有标记 或 有链接
+            const hasSearch = hasSearchMark || uniqueSources.length > 0;
+            
+            console.log('[联网检测] hasSearchMark:', hasSearchMark, '链接数:', uniqueSources.length);
+            
+            return { hasSearch, sources: uniqueSources };
+        }
+
+        // ==================== 渲染联网来源面板 ====================
+        function renderSourcePanel(sources, hasSearch) {
+            const panel = document.createElement('div');
+            panel.className = 'source-panel';
+            
+            const hasSources = hasSearch && sources.length > 0;
+            
+            // 状态栏
+            const statusBar = `<div class="search-status ${hasSources ? 'searched' : 'no-search'}" ${hasSources ? `onclick="this.closest('.source-panel').classList.toggle('open')"` : ''}>
+                ${hasSources
+                    ? `<span>🌐</span><span>已联网搜索</span><span class="search-count">${sources.length} 个来源</span><span class="source-expand-btn">点击查看</span>`
+                    : `<span>📄</span><span>未使用联网搜索</span>`
+                }
+            </div>`;
+            
+            // 来源列表（折叠）
+            const sourceList = hasSources ? `<div class="source-list">
+                ${sources.map((s, i) => `
+                    <a class="source-item" href="${escapeHtml(s.url)}" target="_blank" rel="noopener">
+                        <span class="source-num">${i + 1}</span>
+                        <div class="source-info">
+                            <div class="source-title">${escapeHtml(s.title)}</div>
+                            <div class="source-url">${escapeHtml(s.url)}</div>
+                        </div>
+                    </a>`).join('')}
+            </div>` : '';
+            
+            panel.innerHTML = statusBar + sourceList;
+            return panel;
+        }
+
+        // ==================== 渲染配置面板 ====================
+        function renderCozeWorkflowList() {
+            const container = document.getElementById('cozeWorkflowList');
+            if (!container) {
+                console.error('cozeWorkflowList容器不存在');
+                return;
+            }
+            if (!config.coze?.workflows) {
+                console.error('config.coze.workflows不存在');
+                return;
+            }
+            container.innerHTML = config.coze.workflows.map((w, i) => `
+                <div class="workflow-item" style="margin-top:10px;">
+                    <div class="workflow-item-title">${i === 3 ? '📋 总结工作流' : '工作流 ' + (i + 1)}</div>
+                    <div class="form-group">
+                        <label class="form-label">名称</label>
+                        <input type="text" class="form-input coze-name" data-index="${i}" value="${escapeHtml(w.name || '')}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">工作流ID</label>
+                        <input type="text" class="form-input coze-workflow-id" data-index="${i}" value="${escapeHtml(w.workflowId || '')}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">提示词</label>
+                        <textarea class="form-input form-textarea coze-prompt" data-index="${i}">${escapeHtml(w.systemPrompt || '')}</textarea>
+                    </div>
+                </div>
+            `).join('');
+            console.log('Coze工作流列表已渲染，共', config.coze.workflows.length, '个');
+        }
+
+        // ==================== 连接API获取模型列表 ====================
+        async function connectPlatform(index) {
+            const nameInput = document.querySelector(`.platform-name[data-index="${index}"]`);
+            const urlInput = document.querySelector(`.platform-url[data-index="${index}"]`);
+            const keyInput = document.querySelector(`.platform-key[data-index="${index}"]`);
+            const connectBtn = document.querySelector(`.connect-btn[data-index="${index}"]`);
+            const modelSelect = document.querySelector(`.platform-model[data-index="${index}"]`);
+            const statusSpan = document.querySelector(`.connect-status[data-index="${index}"]`);
+
+            const baseUrl = urlInput.value.trim();
+            const apiKey = keyInput.value.trim();
+
+            if (!baseUrl || !apiKey) {
+                showToast('请填写API地址和Key', 'warning');
+                return;
+            }
+
+            connectBtn.disabled = true;
+            connectBtn.textContent = '连接中...';
+            statusSpan.textContent = '';
+            statusSpan.style.color = 'var(--text-secondary)';
+
+            try {
+                // 调用OpenAI兼容的models接口
+                const response = await fetch(`${baseUrl}/v1/models`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error?.message || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                const models = data.data || data.models || [];
+                
+                if (models.length === 0) {
+                    throw new Error('未获取到模型列表');
+                }
+
+                // 更新配置
+                config.platforms[index].name = nameInput.value;
+                config.platforms[index].baseUrl = baseUrl;
+                config.platforms[index].apiKey = apiKey;
+                config.platforms[index].models = models.map(m => m.id || m);
+                config.platforms[index].connected = true;
+                // 自动选择第一个模型
+                config.platforms[index].model = config.platforms[index].models[0];
+                saveConfig();
+
+                // 更新模型下拉框
+                modelSelect.innerHTML = config.platforms[index].models.map(m => 
+                    `<option value="${m}" ${m === config.platforms[index].model ? 'selected' : ''}>${m}</option>`
+                ).join('');
+                modelSelect.disabled = false;
+
+                // 更新状态
+                connectBtn.textContent = '已连接';
+                connectBtn.style.background = 'var(--success-color)';
+                statusSpan.textContent = `✓ 获取到 ${models.length} 个模型`;
+                statusSpan.style.color = 'var(--success-color)';
+
+                showToast('连接成功！', 'success');
+                renderChatWindows(); // 刷新窗口下拉菜单
+
+            } catch (err) {
+                connectBtn.disabled = false;
+                connectBtn.textContent = '连接';
+                connectBtn.style.background = '';
+                statusSpan.textContent = `✗ ${err.message}`;
+                statusSpan.style.color = 'var(--danger-color)';
+                showToast(`连接失败：${err.message}`, 'error');
+            }
+        }
+
+        function renderPlatformList() {
+            const container = document.getElementById('platformList');
+            if (!container) {
+                console.error('platformList容器不存在');
+                return;
+            }
+            container.innerHTML = config.platforms.map((p, i) => `
+                <div class="workflow-item" style="margin-bottom:10px;">
+                    <div class="form-group">
+                        <label class="form-label">平台名称</label>
+                        <input type="text" class="form-input platform-name" data-index="${i}" value="${escapeHtml(p.name || '')}" placeholder="如：Deepseek、OpenAI...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">API地址</label>
+                        <input type="text" class="form-input platform-url" data-index="${i}" value="${escapeHtml(p.baseUrl || '')}" placeholder="如：https://api.openai.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">API Key</label>
+                        <input type="password" class="form-input platform-key" data-index="${i}" value="${escapeHtml(p.apiKey || '')}" placeholder="输入API Key">
+                    </div>
+                    <div class="form-group" style="display:flex;gap:8px;align-items:flex-end;">
+                        <button class="btn ${p.connected ? 'btn-primary' : 'btn-secondary'} connect-btn" data-index="${i}" style="${p.connected ? 'background:var(--success-color);' : ''}">${p.connected ? '已连接' : '连接'}</button>
+                        <span class="connect-status" data-index="${i}" style="font-size:12px;"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">选择模型</label>
+                        <select class="form-input form-select platform-model" data-index="${i}" ${!p.connected ? 'disabled' : ''}>
+                            ${(p.models || []).map(m => `<option value="${m}" ${p.model === m ? 'selected' : ''}>${m}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+            `).join('');
+
+            // 绑定连接按钮事件
+            container.querySelectorAll('.connect-btn').forEach(btn => {
+                btn.addEventListener('click', () => connectPlatform(btn.dataset.index));
+            });
+
+            // 绑定模型选择事件 - 带验证反馈
+            container.querySelectorAll('.platform-model').forEach(select => {
+                select.addEventListener('change', async () => {
+                    const idx = select.dataset.index;
+                    const newModel = select.value;
+                    const pc = config.platforms[idx];
+                    
+                    // 显示切换中状态
+                    const statusSpan = document.querySelector(`.connect-status[data-index="${idx}"]`);
+                    if (statusSpan) {
+                        statusSpan.textContent = '切换中...';
+                        statusSpan.style.color = 'var(--text-secondary)';
+                    }
+                    
+                    try {
+                        // 发送一个简单测试请求验证模型
+                        const testResponse = await fetch(`${pc.baseUrl}/v1/chat/completions`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${pc.apiKey}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                model: newModel,
+                                messages: [{ role: 'user', content: 'hi' }],
+                                max_tokens: 1
+                            })
+                        });
+                        
+                        if (testResponse.ok) {
+                            // 切换成功
+                            config.platforms[idx].model = newModel;
+                            saveConfig();
+                            if (statusSpan) {
+                                statusSpan.textContent = `✓ 已切换到 ${newModel}`;
+                                statusSpan.style.color = 'var(--success-color)';
+                            }
+                            showToast(`✅ 模型已切换: ${newModel}`, 'success');
+                        } else {
+                            // 切换失败
+                            const err = await testResponse.json().catch(() => ({}));
+                            if (statusSpan) {
+                                statusSpan.textContent = `✗ 切换失败`;
+                                statusSpan.style.color = 'var(--danger-color)';
+                            }
+                            showToast(`❌ 模型切换失败: ${err.error?.message || '不可用'}`, 'error');
+                            // 恢复之前的选择
+                            select.value = config.platforms[idx].model || config.platforms[idx].models[0];
+                        }
+                    } catch (err) {
+                        // 网络错误等
+                        if (statusSpan) {
+                            statusSpan.textContent = `✗ 网络错误`;
+                            statusSpan.style.color = 'var(--danger-color)';
+                        }
+                        showToast(`❌ 切换失败: ${err.message}`, 'error');
+                        select.value = config.platforms[idx].model || config.platforms[idx].models[0];
+                    }
+                });
+            });
+
+            console.log('平台列表已渲染，共', config.platforms.length, '个');
+        }
+
+        // ==================== 保存配置 ====================
+        document.getElementById('saveCozeConfig').addEventListener('click', () => {
+            config.coze.apiToken = document.getElementById('cozeApiToken').value;
+            config.coze.baseUrl = document.getElementById('cozeBaseUrl').value;
+            config.coze.botId = document.getElementById('cozeBotId').value.trim();
+            config.coze.inputVariable = document.getElementById('cozeInputVariable').value || 'USER_INPUT';
+            document.querySelectorAll('.coze-name').forEach(input => {
+                config.coze.workflows[input.dataset.index].name = input.value;
+            });
+            document.querySelectorAll('.coze-workflow-id').forEach(input => {
+                config.coze.workflows[input.dataset.index].workflowId = input.value;
+            });
+            document.querySelectorAll('.coze-prompt').forEach(textarea => {
+                config.coze.workflows[textarea.dataset.index].systemPrompt = textarea.value;
+            });
+            saveConfig();
+            console.log('配置已保存:', JSON.stringify(config, null, 2));
+            renderSummarySourceSelect();
+            updateConfigStatus();
+            renderChatWindows();
+            showToast('✅ Coze配置已保存！', 'success');
+        });
+
+        // ==================== 配置状态 ====================
+        function updateConfigStatus() {
+            const status = document.getElementById('configStatus');
+            const hasCoze = config.coze.apiToken && config.coze.workflows.some(w => w.workflowId);
+            const hasPlatform = config.platforms.some(p => p.connected);
+            if (hasCoze || hasPlatform) {
+                status.textContent = '已配置';
+                status.style.color = 'var(--success-color)';
+            } else {
+                status.textContent = '未配置';
+                status.style.color = 'var(--danger-color)';
+            }
+        }
+
+        // ==================== 侧边栏折叠 ====================
+        document.querySelectorAll('.config-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const sectionId = header.dataset.section;
+                document.getElementById(sectionId).classList.toggle('hidden');
+                header.classList.toggle('collapsed');
+            });
+            
+            // 默认折叠所有面板
+            const sectionId = header.dataset.section;
+            document.getElementById(sectionId).classList.add('hidden');
+            header.classList.add('collapsed');
+        });
+
+        document.getElementById('toggleSidebar').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        });
+
+        // ==================== 主题切换 ====================
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                config.theme = btn.dataset.theme;
+                if (config.theme === 'default') {
+                    document.body.removeAttribute('data-theme');
+                } else {
+                    document.body.setAttribute('data-theme', config.theme);
+                }
+                saveConfig();
+                document.querySelectorAll('.theme-btn').forEach(b => {
+                    b.classList.toggle('btn-primary', b === btn);
+                    b.classList.toggle('btn-secondary', b !== btn);
+                });
+            });
+        });
+
+        document.querySelectorAll('.font-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                config.fontSize = btn.dataset.size;
+                document.documentElement.style.setProperty('--font-size', config.fontSize);
+                saveConfig();
+                document.querySelectorAll('.font-btn').forEach(b => {
+                    b.classList.toggle('btn-primary', b === btn);
+                    b.classList.toggle('btn-secondary', b !== btn);
+                });
+            });
+        });
+
+        // ==================== 数据管理 ====================
+        // 简单加密/解密函数（XOR加密）
+        function encrypt(text, password) {
+            let result = '';
+            for (let i = 0; i < text.length; i++) {
+                result += String.fromCharCode(text.charCodeAt(i) ^ password.charCodeAt(i % password.length));
+            }
+            return btoa(unescape(encodeURIComponent(result)));
+        }
+
+        function decrypt(encoded, password) {
+            try {
+                const text = decodeURIComponent(escape(atob(encoded)));
+                let result = '';
+                for (let i = 0; i < text.length; i++) {
+                    result += String.fromCharCode(text.charCodeAt(i) ^ password.charCodeAt(i % password.length));
+                }
+                return result;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // 导入配置
+        document.getElementById('importConfig').addEventListener('click', () => {
+            document.getElementById('importConfigFile').click();
+        });
+
+        document.getElementById('importConfigFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importData = JSON.parse(event.target.result);
+                    
+                    // 检查时效性
+                    if (importData.expireTime) {
+                        const remaining = importData.expireTime - Date.now();
+                        if (remaining <= 0) {
+                            showToast('傻鸟~哈哈', 'error');
+                            return;
+                        }
+                        const mins = Math.ceil(remaining / 60000);
+                        console.log(`[配置] 剩余有效时间: ${mins}分钟`);
+                    }
+                    
+                    // 检查是否是加密配置
+                    if (importData.encrypted) {
+                        const password = prompt('此配置已加密，请输入密码：');
+                        if (!password) {
+                            showToast('已取消导入', 'warning');
+                            return;
+                        }
+                        
+                        const decrypted = decrypt(importData.encrypted, password);
+                        if (!decrypted) {
+                            showToast('密码错误或文件损坏', 'error');
+                            return;
+                        }
+                        
+                        try {
+                            config = JSON.parse(decrypted);
+                        } catch (err) {
+                            showToast('密码错误', 'error');
+                            return;
+                        }
+                    } else if (importData.config) {
+                        // 兼容旧版无密码配置
+                        config = importData.config;
+                    } else {
+                        showToast('配置文件格式错误', 'error');
+                        return;
+                    }
+                    
+                    saveConfig();
+                    renderCozeWorkflowList();
+                    renderPlatformList();
+                    renderChatWindows();
+                    renderSummarySourceSelect();
+                    updateConfigStatus();
+                    
+                    // 调试信息
+                    console.log('配置导入成功:', config);
+                    console.log('Coze API Token:', config.coze?.apiToken ? '已配置' : '未配置');
+                    console.log('工作流配置:', config.coze?.workflows?.map(w => ({ name: w.name, workflowId: w.workflowId ? '已配置' : '未配置' })));
+                    console.log('总结窗口配置:', config.windows[3]);
+                    
+                    showToast('配置已导入！', 'success');
+                } catch (err) {
+                    showToast('配置文件解析失败：' + err.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = ''; // 清空，允许重复选择同一文件
+        });
+
+        document.getElementById('exportChat').addEventListener('click', () => {
+            let content = '# 多模型对比聊天记录\n\n';
+            Object.entries(chatHistories).forEach(([id, history]) => {
+                const win = config.windows.find(w => w.id === id);
+                content += `## 窗口 ${id}\n\n`;
+                history.forEach(msg => {
+                    content += `**${msg.role === 'user' ? '用户' : 'AI'}：**\n${msg.content}\n\n`;
+                });
+            });
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `聊天记录_${new Date().toISOString().slice(0, 10)}.md`;
+            a.click();
+            showToast('已导出！', 'success');
+        });
+
+        document.getElementById('clearChat').addEventListener('click', () => {
+            if (!confirm('确定清空所有聊天记录？')) return;
+            chatHistories = {};
+            latestQuestion = '';
+            cozeConversationIds = {};  // 清除所有 Coze 对话记忆
+            localStorage.removeItem('multiModelChatHistories');
+            localStorage.removeItem('multiModelLatestQuestion');
+            renderChatWindows();
+            document.getElementById('messages-summary').innerHTML = '';
+            showToast('已清空！', 'success');
+        });
+
+        // ==================== 总结窗口 ====================
+        document.getElementById('summaryToggleBtn').addEventListener('click', () => {
+            document.getElementById('summarySidebar').classList.toggle('show');
+            document.getElementById('summaryToggleBtn').classList.toggle('hidden');
+        });
+
+        document.getElementById('closeSummarySidebar').addEventListener('click', () => {
+            document.getElementById('summarySidebar').classList.remove('show');
+            document.getElementById('summaryToggleBtn').classList.remove('hidden');
+        });
+
+        // ==================== 窗口数量 & 请求状态 ====================
+        var winCount = config.windowCount || 3;
+        var pendingReqs = 0, totalReqs = 0;
+
+        function setWinCount(n) {
+            var newCount = Math.max(2, Math.min(4, n));
+            // 如果窗口数减少，强制停止被隐藏窗口的请求
+            if (newCount < winCount) {
+                for (var i = newCount; i < winCount; i++) {
+                    var hiddenWin = config.windows[i];
+                    if (hiddenWin && abortControllers[hiddenWin.id]) {
+                        abortControllers[hiddenWin.id].abort();
+                        abortControllers[hiddenWin.id] = null;
+                    }
+                }
+            }
+            winCount = newCount;
+            config.windowCount = winCount;
+            // 补全 windows 配置
+            while (config.windows.length < winCount) {
+                var idx = config.windows.length;
+                config.windows.push({ id: String(idx + 1), source: 'coze', cozeIndex: idx, platformIndex: -1, systemPrompt: '' });
+            }
+            saveConfig();
+            renderChatWindows();
+        }
+
+        function updateReqStatus() {
+            var el = document.getElementById('reqStatus');
+            var txt = document.getElementById('reqText');
+            if (!el || !txt) return;
+            if (totalReqs === 0 || pendingReqs === 0) {
+                el.className = 'req-status';
+                txt.textContent = '就绪';
+            } else {
+                el.className = 'req-status running';
+                txt.textContent = (totalReqs - pendingReqs) + '/' + totalReqs + ' 响应';
+            }
+        }
+
+        function onOneComplete() {
+            pendingReqs = Math.max(0, pendingReqs - 1);
+            if (pendingReqs === 0) {
+                var el = document.getElementById('reqStatus');
+                var txt = document.getElementById('reqText');
+                if (el) el.className = 'req-status done';
+                if (txt) txt.textContent = '全部完成✓';
+                setTimeout(function() { totalReqs = 0; updateReqStatus(); }, 2500);
+            } else {
+                updateReqStatus();
+            }
+        }
+
+        // ==================== 聊天窗口渲染 ====================
+        function renderChatWindows() {
+            var container = document.getElementById('chatContainer');
+            var wcLabel = document.getElementById('wcLabel');
+            var wcDec = document.getElementById('wcDec');
+            var wcInc = document.getElementById('wcInc');
+            if (wcLabel) wcLabel.textContent = winCount + ' 窗口';
+            if (wcDec) wcDec.disabled = winCount <= 2;
+            if (wcInc) wcInc.disabled = winCount >= 4;
+
+            var displayWindows = config.windows.slice(0, winCount);
+            
+            // 构建数据源下拉选项
+            function buildSourceOptions(w) {
+                var options = '';
+                var cozeGroup = config.coze.workflows.map(function(cw, ci) {
+                    var selected = w.source === 'coze' && w.cozeIndex === ci ? 'selected' : '';
+                    return '<option value="coze:' + ci + '" ' + selected + '>' + (cw && cw.name ? cw.name : '工作流' + (ci + 1)) + '</option>';
+                }).join('');
+                var platformGroup = config.platforms.map(function(p, pi) {
+                    if (!p.connected) return '';
+                    var selected = w.source === 'platform' && w.platformIndex === pi ? 'selected' : '';
+                    return '<option value="platform:' + pi + '" ' + selected + '>' + p.name + '</option>';
+                }).join('');
+                if (cozeGroup) options += '<optgroup label="Coze工作流">' + cozeGroup + '</optgroup>';
+                if (platformGroup) options += '<optgroup label="第三方API">' + platformGroup + '</optgroup>';
+                return options;
+            }
+
+            // 构建 HTML，窗口之间插拖拽分隔线
+            var html = '';
+            displayWindows.forEach(function(w, idx) {
+                html += '<div class="chat-window" data-window-id="' + w.id + '" style="flex:1 1 0;min-width:180px;">';
+                html += '<div class="chat-header">';
+                html += '<div class="chat-header-left"><select class="source-select" data-window-id="' + w.id + '" title="选择数据源">' + buildSourceOptions(w) + '</select></div>';
+                html += '<div class="chat-header-actions">';
+                html += '<button class="chat-header-btn reset-width-btn" title="恢复等宽">⇔</button>';
+                html += '<button class="chat-header-btn clear-win" data-id="' + w.id + '" title="清空">🗑️</button>';
+                html += '<button class="chat-header-btn stop-win" data-id="' + w.id + '" disabled title="停止">⏹️</button>';
+                html += '</div></div>';
+                html += '<div class="chat-messages" id="messages-' + w.id + '">' + renderMessages(w.id) + '</div>';
+                html += '</div>';
+                if (idx < displayWindows.length - 1) {
+                    html += '<div class="chat-resizer"></div>';
+                }
+            });
+            container.innerHTML = html;
+
+            // 数据源切换
+            container.querySelectorAll('.source-select').forEach(function(select) {
+                select.addEventListener('change', function() {
+                    var windowId = select.dataset.windowId;
+                    var winConfig = config.windows.find(function(w) { return w.id === windowId; });
+                    if (!winConfig) return;
+                    var value = select.value;
+                    if (value.startsWith('coze:')) {
+                        winConfig.source = 'coze';
+                        winConfig.cozeIndex = parseInt(value.split(':')[1]);
+                        winConfig.platformIndex = -1;
+                    } else if (value.startsWith('platform:')) {
+                        winConfig.source = 'platform';
+                        winConfig.platformIndex = parseInt(value.split(':')[1]);
+                    }
+                    saveConfig();
+                    renderChatWindows();
+                });
+            });
+
+            // 拖拽分隔线
+            container.querySelectorAll('.chat-resizer').forEach(function(resizer) {
+                resizer.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    resizer.classList.add('active');
+                    var prev = resizer.previousElementSibling;
+                    var next = resizer.nextElementSibling;
+                    var startX = e.clientX;
+                    var prevW = prev.getBoundingClientRect().width;
+                    var nextW = next.getBoundingClientRect().width;
+                    document.body.style.cursor = 'col-resize';
+                    document.body.style.userSelect = 'none';
+                    function onMove(e) {
+                        var dx = e.clientX - startX;
+                        var np = Math.max(180, prevW + dx);
+                        var nn = Math.max(180, nextW - dx);
+                        prev.style.flex = 'none';
+                        prev.style.width = np + 'px';
+                        next.style.flex = 'none';
+                        next.style.width = nn + 'px';
+                    }
+                    function onUp() {
+                        resizer.classList.remove('active');
+                        document.body.style.cursor = '';
+                        document.body.style.userSelect = '';
+                        document.removeEventListener('mousemove', onMove);
+                        document.removeEventListener('mouseup', onUp);
+                    }
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                });
+            });
+
+            // 恢复等宽（任意一个按钮都能重置所有窗口）
+            container.querySelectorAll('.reset-width-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    container.querySelectorAll('.chat-window').forEach(function(w) {
+                        w.style.flex = '1 1 0';
+                        w.style.width = '';
+                    });
+                    showToast('已恢复等宽', 'success');
+                });
+            });
+
+            // 清空 & 停止按钮
+            container.querySelectorAll('.clear-win').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    chatHistories[btn.dataset.id] = [];
+                    saveChatHistories();
+                    // 同时清除 Coze 对话 ID，重置记忆
+                    delete cozeConversationIds[btn.dataset.id];
+                    document.getElementById('messages-' + btn.dataset.id).innerHTML = '';
+                    showToast('已清空（对话记忆已重置）', 'success');
+                });
+            });
+            container.querySelectorAll('.stop-win').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    if (abortControllers[btn.dataset.id]) {
+                        abortControllers[btn.dataset.id].abort();
+                        abortControllers[btn.dataset.id] = null;
+                    }
+                    btn.disabled = true;
+                });
+            });
+        }
+
+        function renderMessages(windowId) {
+            const history = chatHistories[windowId] || [];
+            return history.map(msg => {
+                const content = msg.role === 'ai' ? renderMarkdown(msg.content) : escapeHtml(msg.content);
+                return `<div class="message message-${msg.role} ${msg.loading ? 'message-loading' : ''}">${content}</div>`;
+            }).join('');
+        }
+
+        function addMessage(windowId, content, role, loading = false) {
+            if (!chatHistories[windowId]) chatHistories[windowId] = [];
+            chatHistories[windowId].push({ role, content, loading });
+            saveChatHistories();
+            
+            const container = document.getElementById(`messages-${windowId}`);
+            if (container) {
+                const div = document.createElement('div');
+                div.className = `message message-${role} ${loading ? 'message-loading' : ''}`;
+                if (loading && role === 'ai') {
+                    div.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+                } else {
+                    div.innerHTML = role === 'ai' ? renderMarkdown(content) : escapeHtml(content);
+                }
+                // 只有 AI 消息才添加按钮，用户消息不加任何按钮
+                container.appendChild(div);
+                container.scrollTop = container.scrollHeight;
+            }
+            return chatHistories[windowId].length - 1;
+        }
+
+        function updateMessage(windowId, index, content, loading = false) {
+            if (chatHistories[windowId]?.[index]) {
+                chatHistories[windowId][index].content = content;
+                chatHistories[windowId][index].loading = loading;
+                saveChatHistories();
+                
+                const container = document.getElementById(`messages-${windowId}`);
+                const msgs = container?.querySelectorAll('.message-ai');
+                if (msgs?.length) {
+                    const last = msgs[msgs.length - 1];
+                    last.innerHTML = renderMarkdown(content);
+                    if (!loading) {
+                        last.classList.remove('message-loading');
+                        
+                        // 添加按钮工具栏（复制 + 重新回答）
+                        const actionsDiv = document.createElement('div');
+                        actionsDiv.className = 'msg-actions';
+                        
+                        // 复制按钮
+                        const copyBtn = document.createElement('button');
+                        copyBtn.className = 'msg-action-btn';
+                        copyBtn.title = '复制';
+                        copyBtn.innerHTML = '📋';
+                        copyBtn.onclick = () => {
+                            navigator.clipboard.writeText(content);
+                            copyBtn.innerHTML = '✓';
+                            setTimeout(() => copyBtn.innerHTML = '📋', 1500);
+                        };
+                        actionsDiv.appendChild(copyBtn);
+                        
+                        // 重新回答按钮
+                        const retryBtn = document.createElement('button');
+                        retryBtn.className = 'msg-action-btn retry-btn';
+                        retryBtn.title = '重新回答';
+                        retryBtn.innerHTML = '🔄';
+                        retryBtn.onclick = () => retryWindow(windowId);
+                        actionsDiv.appendChild(retryBtn);
+                        
+                        last.appendChild(actionsDiv);
+                        
+                        // 提取联网搜索来源并添加面板
+                        const { hasSearch, sources } = extractWebSources(content);
+                        const sourcePanel = renderSourcePanel(sources, hasSearch);
+                        last.appendChild(sourcePanel);
+                    }
+                    container.scrollTop = container.scrollHeight;
+                }
+            }
+        }
+
+        // ==================== 重新回答单个窗口 ====================
+        async function retryWindow(windowId) {
+            const win = config.windows.find(w => w.id === windowId);
+            if (!win) return;
+            
+            // 获取最后一条用户消息
+            const history = chatHistories[windowId] || [];
+            const lastUserMsg = [...history].reverse().find(m => m.role === 'user');
+            if (!lastUserMsg) {
+                showToast('没有找到用户问题', 'warning');
+                return;
+            }
+            
+            // 删除最后一条AI回复
+            const lastAiIdx = history.findLastIndex(m => m.role === 'ai');
+            if (lastAiIdx !== -1) {
+                history.splice(lastAiIdx, 1);
+                saveChatHistories();
+            }
+            
+            // 重新渲染消息列表
+            renderChatMessages(windowId);
+            
+            // 确定调用类型
+            let canCall = false;
+            let callType = '';
+            let callIndex = -1;
+            let prompt = lastUserMsg.content;
+            
+            if (win.source === 'coze') {
+                const cw = config.coze.workflows[win.cozeIndex];
+                if (config.coze.apiToken && cw?.workflowId) {
+                    canCall = true;
+                    callType = 'coze';
+                    callIndex = win.cozeIndex;
+                    if (win.systemPrompt) prompt = `${win.systemPrompt}\n\n用户问题：${lastUserMsg.content}`;
+                }
+            } else if (win.source === 'platform' && win.platformIndex >= 0) {
+                const pc = config.platforms[win.platformIndex];
+                if (pc?.connected && pc?.model) {
+                    canCall = true;
+                    callType = 'platform';
+                    callIndex = win.platformIndex;
+                    if (win.systemPrompt) prompt = `${win.systemPrompt}\n\n用户问题：${lastUserMsg.content}`;
+                }
+            }
+            
+            if (!canCall) {
+                showToast('该窗口未配置数据源', 'error');
+                return;
+            }
+            
+            // 添加新的AI消息占位
+            const msgIdx = addMessage(windowId, '', 'ai', true);
+            
+            const controller = new AbortController();
+            abortControllers[windowId] = controller;
+            
+            let fullAnswer = '';
+            
+            try {
+                const onChunk = (chunk) => {
+                    fullAnswer += chunk;
+                    updateMessage(windowId, msgIdx, fullAnswer, true);
+                };
+                
+                if (callType === 'coze') {
+                    const convId = cozeConversationIds[windowId] || null;
+                    const cozeResult = await callCozeWorkflow(
+                        config.coze.workflows[callIndex].workflowId,
+                        prompt, onChunk, controller.signal, convId, null
+                    );
+                    if (cozeResult.convId) cozeConversationIds[windowId] = cozeResult.convId;
+                } else if (callType === 'platform') {
+                    await callPlatformAPI(callIndex, prompt, onChunk, controller.signal);
+                }
+                
+                const finalAnswer = fullAnswer || '（无输出）';
+                updateMessage(windowId, msgIdx, finalAnswer, false);
+                showToast('重新回答完成', 'success');
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    updateMessage(windowId, msgIdx, '已停止', false);
+                } else {
+                    updateMessage(windowId, msgIdx, `错误：${err.message}`, false);
+                    showToast(`重新回答失败：${err.message}`, 'error');
+                }
+            } finally {
+                abortControllers[windowId] = null;
+            }
+        }
+
+        // ==================== 渲染聊天消息列表 ====================
+        function renderChatMessages(windowId) {
+            const container = document.getElementById(`messages-${windowId}`);
+            if (!container) return;
+            
+            const history = chatHistories[windowId] || [];
+            container.innerHTML = '';
+            
+            history.forEach((msg, idx) => {
+                const div = document.createElement('div');
+                div.className = `message message-${msg.role}${msg.loading ? ' message-loading' : ''}`;
+                
+                if (msg.role === 'user') {
+                    div.textContent = msg.content;
+                } else {
+                    div.innerHTML = renderMarkdown(msg.content);
+                    if (!msg.loading) {
+                        // 添加按钮工具栏
+                        const actionsDiv = document.createElement('div');
+                        actionsDiv.className = 'msg-actions';
+                        
+                        const copyBtn = document.createElement('button');
+                        copyBtn.className = 'msg-action-btn';
+                        copyBtn.title = '复制';
+                        copyBtn.innerHTML = '📋';
+                        copyBtn.onclick = () => {
+                            navigator.clipboard.writeText(msg.content);
+                            copyBtn.innerHTML = '✓';
+                            setTimeout(() => copyBtn.innerHTML = '📋', 1500);
+                        };
+                        actionsDiv.appendChild(copyBtn);
+                        
+                        const retryBtn = document.createElement('button');
+                        retryBtn.className = 'msg-action-btn retry-btn';
+                        retryBtn.title = '重新回答';
+                        retryBtn.innerHTML = '🔄';
+                        retryBtn.onclick = () => retryWindow(windowId);
+                        actionsDiv.appendChild(retryBtn);
+                        
+                        div.appendChild(actionsDiv);
+                        
+                        // 联网来源面板
+                        const { hasSearch, sources } = extractWebSources(msg.content);
+                        const sourcePanel = renderSourcePanel(sources, hasSearch);
+                        div.appendChild(sourcePanel);
+                    }
+                }
+                
+                container.appendChild(div);
+            });
+            
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // ==================== API调用 ====================
+        async function callCozeWorkflow(workflowId, prompt, onChunk, signal, conversationId, onSources) {
+            console.log('[对话流] workflow_id:', workflowId, '| 本次传入 conversation_id:', conversationId || '无（首次）');
+
+            const requestBody = {
+                workflow_id: workflowId,
+                additional_messages: [
+                    { role: 'user', content: prompt, content_type: 'text' }
+                ],
+                parameters: {}
+            };
+
+            if (config.coze.botId) {
+                requestBody.bot_id = config.coze.botId;
+            }
+
+            if (conversationId) {
+                requestBody.conversation_id = conversationId;
+            }
+
+            const response = await fetch(`${config.coze.baseUrl}/v1/workflows/chat`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${config.coze.apiToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/event-stream'
+                },
+                body: JSON.stringify(requestBody),
+                signal
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                console.error('[对话流] API错误:', errData);
+                throw new Error(errData.msg || errData.message || `HTTP ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let hasOutput = false;
+            let returnedConvId = null;
+            let currentEvent = '';
+            const sources = []; // 收集联网搜索来源
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (line.startsWith('event:')) {
+                        currentEvent = line.slice(6).trim();
+                    } else if (line.startsWith('data:')) {
+                        const raw = line.slice(5).trim();
+                        if (!raw || raw === '[DONE]') continue;
+                        try {
+                            const json = JSON.parse(raw);
+
+                            // 提取 conversation_id
+                            if (!returnedConvId && json.conversation_id) {
+                                returnedConvId = json.conversation_id;
+                                console.log('%c[对话流] ✅ conversation_id: ' + returnedConvId, 'color:green;font-weight:bold');
+                            }
+
+                            // ===== 完整事件日志（调试用）=====
+                            // 打印所有事件的详细信息，便于调试
+                            console.log('[Coze事件]', currentEvent, '| type:', json.type, '| 完整数据:', JSON.stringify(json, null, 2));
+
+                            // 提取联网搜索来源 - 在所有事件中搜索
+                            const extractSources = (obj) => {
+                                if (!obj || typeof obj !== 'object') return;
+                                if (Array.isArray(obj)) { obj.forEach(extractSources); return; }
+
+                                // 检查 source 数组
+                                if (obj.source && Array.isArray(obj.source)) {
+                                    console.log('[对话流] 发现 source 数组:', obj.source);
+                                    obj.source.forEach(s => {
+                                        if (s?.url) sources.push({ url: s.url, title: s.title || s.sitename || s.url });
+                                    });
+                                }
+                                // 检查 doc_results 数组
+                                if (obj.doc_results && Array.isArray(obj.doc_results)) {
+                                    console.log('[对话流] 发现 doc_results 数组:', obj.doc_results);
+                                    obj.doc_results.forEach(s => {
+                                        if (s?.url) sources.push({ url: s.url, title: s.title || s.sitename || s.url });
+                                    });
+                                }
+                                // 检查 results 数组
+                                if (obj.results && Array.isArray(obj.results)) {
+                                    console.log('[对话流] 发现 results 数组:', obj.results);
+                                    obj.results.forEach(s => {
+                                        if (s?.url) sources.push({ url: s.url, title: s.title || s.sitename || s.url });
+                                    });
+                                }
+                                // 检查 search_results 数组
+                                if (obj.search_results && Array.isArray(obj.search_results)) {
+                                    console.log('[对话流] 发现 search_results 数组:', obj.search_results);
+                                    obj.search_results.forEach(s => {
+                                        if (s?.url) sources.push({ url: s.url, title: s.title || s.sitename || s.url });
+                                    });
+                                }
+                                // 检查 web_pages 数组
+                                if (obj.web_pages && Array.isArray(obj.web_pages)) {
+                                    console.log('[对话流] 发现 web_pages 数组:', obj.web_pages);
+                                    obj.web_pages.forEach(s => {
+                                        if (s?.url) sources.push({ url: s.url, title: s.title || s.sitename || s.name || s.url });
+                                    });
+                                }
+                                // 检查 links 数组
+                                if (obj.links && Array.isArray(obj.links)) {
+                                    console.log('[对话流] 发现 links 数组:', obj.links);
+                                    obj.links.forEach(s => {
+                                        if (s?.url) sources.push({ url: s.url, title: s.title || s.sitename || s.name || s.url });
+                                    });
+                                }
+                                // 检查单个 url 字段（带title）
+                                if (obj.url && typeof obj.url === 'string' && obj.url.startsWith('http') && obj.title) {
+                                    sources.push({ url: obj.url, title: obj.title || obj.sitename || obj.name });
+                                }
+                                // 递归搜索
+                                Object.values(obj).forEach(extractSources);
+                            };
+
+                            // 对每个事件都尝试提取来源
+                            extractSources(json);
+
+                            // 提取联网搜索来源（支持多种事件类型和数据结构）
+                            // 1. tool_response 类型
+                            if (json.type === 'tool_response' && json.content) {
+                                console.log('[对话流] tool_response raw:', json.content.slice(0, 500));
+                                try {
+                                    const toolData = typeof json.content === 'string'
+                                        ? JSON.parse(json.content) : json.content;
+
+                                    // 插件1结构: data.source[].{url, title, sitename}
+                                    const arr1 = toolData?.data?.source;
+                                    if (Array.isArray(arr1)) {
+                                        arr1.forEach(item => {
+                                            if (item?.url) sources.push({
+                                                url: item.url,
+                                                title: item.title || item.sitename || item.url
+                                            });
+                                        });
+                                        console.log('[对话流] 插件1来源数:', arr1.length);
+                                    }
+
+                                    // 插件2结构: data.doc_results[].{url, title, sitename}
+                                    const arr2 = toolData?.data?.doc_results;
+                                    if (Array.isArray(arr2)) {
+                                        arr2.forEach(item => {
+                                            if (item?.url) sources.push({
+                                                url: item.url,
+                                                title: item.title || item.sitename || item.url
+                                            });
+                                        });
+                                        console.log('[对话流] 插件2来源数:', arr2.length);
+                                    }
+
+                                    // 兜底：递归找所有 url 字段
+                                    if (!arr1 && !arr2) {
+                                        const walk = (obj) => {
+                                            if (!obj || typeof obj !== 'object') return;
+                                            if (Array.isArray(obj)) { obj.forEach(walk); return; }
+                                            if (obj.url && typeof obj.url === 'string' && obj.url.startsWith('http')) {
+                                                sources.push({ url: obj.url, title: obj.title || obj.sitename || obj.url });
+                                            }
+                                            Object.values(obj).forEach(walk);
+                                        };
+                                        walk(toolData);
+                                    }
+                                } catch(e) {
+                                    console.warn('[对话流] tool_response 解析失败:', e.message);
+                                }
+                            }
+
+                            // 2. 检查 tool_calls 或 tools 相关字段
+                            if (json.tool_calls || json.tools) {
+                                const tools = json.tool_calls || json.tools;
+                                console.log('[对话流] 检测到 tool_calls/tools:', tools);
+                                const walk = (obj) => {
+                                    if (!obj || typeof obj !== 'object') return;
+                                    if (Array.isArray(obj)) { obj.forEach(walk); return; }
+                                    if (obj.url && typeof obj.url === 'string' && obj.url.startsWith('http')) {
+                                        sources.push({ url: obj.url, title: obj.title || obj.name || obj.url });
+                                    }
+                                    Object.values(obj).forEach(walk);
+                                };
+                                walk(tools);
+                            }
+
+                            // 3. 检查 content 中是否包含 URL 数据（某些插件直接在content里返回）
+                            if (json.content && typeof json.content === 'object') {
+                                const walk = (obj) => {
+                                    if (!obj || typeof obj !== 'object') return;
+                                    if (Array.isArray(obj)) { obj.forEach(walk); return; }
+                                    if (obj.url && typeof obj.url === 'string' && obj.url.startsWith('http')) {
+                                        sources.push({ url: obj.url, title: obj.title || obj.sitename || obj.url });
+                                    }
+                                    if (obj.source && Array.isArray(obj.source)) {
+                                        obj.source.forEach(s => {
+                                            if (s?.url) sources.push({ url: s.url, title: s.title || s.sitename || s.url });
+                                        });
+                                    }
+                                    if (obj.doc_results && Array.isArray(obj.doc_results)) {
+                                        obj.doc_results.forEach(s => {
+                                            if (s?.url) sources.push({ url: s.url, title: s.title || s.sitename || s.url });
+                                        });
+                                    }
+                                    Object.values(obj).forEach(walk);
+                                };
+                                walk(json.content);
+                            }
+
+                            // 4. 检查 output 字段（某些工作流结构）
+                            if (json.output) {
+                                const walk = (obj) => {
+                                    if (!obj || typeof obj !== 'object') return;
+                                    if (Array.isArray(obj)) { obj.forEach(walk); return; }
+                                    if (obj.url && typeof obj.url === 'string' && obj.url.startsWith('http')) {
+                                        sources.push({ url: obj.url, title: obj.title || obj.sitename || obj.url });
+                                    }
+                                    if (obj.source && Array.isArray(obj.source)) {
+                                        obj.source.forEach(s => {
+                                            if (s?.url) sources.push({ url: s.url, title: s.title || s.sitename || s.url });
+                                        });
+                                    }
+                                    if (obj.doc_results && Array.isArray(obj.doc_results)) {
+                                        obj.doc_results.forEach(s => {
+                                            if (s?.url) sources.push({ url: s.url, title: s.title || s.sitename || s.url });
+                                        });
+                                    }
+                                    Object.values(obj).forEach(walk);
+                                };
+                                walk(json.output);
+                            }
+
+                            // 5. 处理 verbose 类型事件（Coze对话流实际返回的事件类型）
+                            if (json.type === 'verbose' && json.content) {
+                                console.log('[对话流] verbose事件 content:', typeof json.content === 'string' ? json.content.slice(0, 500) : json.content);
+                                try {
+                                    // content 可能是 JSON 字符串或对象
+                                    const contentData = typeof json.content === 'string'
+                                        ? JSON.parse(json.content) : json.content;
+
+                                    console.log('[对话流] verbose content解析后:', contentData);
+
+                                    // 递归查找所有来源
+                                    const walk = (obj) => {
+                                        if (!obj || typeof obj !== 'object') return;
+                                        if (Array.isArray(obj)) { obj.forEach(walk); return; }
+
+                                        // 检查 source 数组
+                                        if (obj.source && Array.isArray(obj.source)) {
+                                            obj.source.forEach(s => {
+                                                if (s?.url) sources.push({ url: s.url, title: s.title || s.sitename || s.url });
+                                            });
+                                        }
+                                        // 检查 doc_results 数组
+                                        if (obj.doc_results && Array.isArray(obj.doc_results)) {
+                                            obj.doc_results.forEach(s => {
+                                                if (s?.url) sources.push({ url: s.url, title: s.title || s.sitename || s.url });
+                                            });
+                                        }
+                                        // 检查 results 数组
+                                        if (obj.results && Array.isArray(obj.results)) {
+                                            obj.results.forEach(s => {
+                                                if (s?.url) sources.push({ url: s.url, title: s.title || s.sitename || s.url });
+                                            });
+                                        }
+                                        // 检查单个 url
+                                        if (obj.url && typeof obj.url === 'string' && obj.url.startsWith('http')) {
+                                            sources.push({ url: obj.url, title: obj.title || obj.sitename || obj.name || obj.url });
+                                        }
+                                        Object.values(obj).forEach(walk);
+                                    };
+                                    walk(contentData);
+                                } catch(e) {
+                                    console.warn('[对话流] verbose content解析失败:', e.message);
+                                }
+                            }
+
+                            // 流式文本片段
+                            if (currentEvent === 'conversation.message.delta' &&
+                                json.type === 'answer' && json.role === 'assistant' && json.content) {
+                                hasOutput = true;
+                                onChunk(json.content);
+                            }
+                        } catch (e) {
+                            console.warn('[对话流] 解析失败:', raw.slice(0, 80));
+                        }
+                    }
+                }
+            }
+
+            // 去重并回调
+            const uniqueSources = sources.filter((s, i, arr) =>
+                arr.findIndex(x => x.url === s.url) === i
+            );
+            if (uniqueSources.length > 0 && onSources) {
+                onSources(uniqueSources);
+            }
+            console.log('[对话流] 联网来源数:', uniqueSources.length, uniqueSources);
+
+            if (!hasOutput) {
+                console.warn('[对话流] ⚠️ 无输出！请检查工作流是否已发布');
+            }
+
+            return { convId: returnedConvId || conversationId, sources: uniqueSources };
+        }
+
+        async function callPlatformAPI(platformIndex, prompt, onChunk, signal) {
+            const pc = config.platforms[platformIndex];
+            
+            console.log('调用第三方API:', platformIndex, '配置:', pc);
+            
+            if (!pc?.connected || !pc?.apiKey) throw new Error('请先连接平台');
+            if (!pc?.model) throw new Error('请先选择模型');
+
+            console.log('请求URL:', `${pc.baseUrl}/v1/chat/completions`);
+            console.log('请求模型:', pc.model);
+
+            const response = await fetch(`${pc.baseUrl}/v1/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${pc.apiKey}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/event-stream'
+                },
+                body: JSON.stringify({
+                    model: pc.model,
+                    messages: [{ role: 'user', content: prompt }],
+                    stream: true
+                }),
+                signal
+            });
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                console.error('API错误:', err);
+                throw new Error(err.error?.message || `HTTP ${response.status}`);
+            }
+
+            console.log('API响应正常，开始读取流...');
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let hasOutput = false;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+                for (const line of lines) {
+                    if (line.startsWith('data:')) {
+                        const data = line.slice(5).trim();
+                        if (data === '[DONE]') continue;
+                        try {
+                            const json = JSON.parse(data);
+                            const content = json.choices?.[0]?.delta?.content;
+                            if (content) {
+                                hasOutput = true;
+                                onChunk(content);
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+            
+            if (!hasOutput) {
+                console.warn('第三方API无输出');
+            }
+        }
+
+        // ==================== 发送消息 ====================
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const question = input.value.trim();
+            if (!question) return showToast('请输入问题', 'warning');
+
+            input.value = '';
+            document.getElementById('charCount').textContent = '0 字';
+            latestQuestion = question;
+            saveLatestQuestion();
+
+            // 统计可调用的窗口
+            const activeWins = config.windows.slice(0, winCount);
+            const callable = activeWins.filter(win => {
+                if (win.source === 'coze') {
+                    const cw = config.coze.workflows[win.cozeIndex];
+                    return config.coze.apiToken && cw && cw.workflowId;
+                } else if (win.source === 'platform' && win.platformIndex >= 0) {
+                    const pc = config.platforms[win.platformIndex];
+                    return pc && pc.connected && pc.model;
+                }
+                return false;
+            });
+
+            if (callable.length === 0) return showToast('请先配置至少一个数据源', 'warning');
+
+            pendingReqs = callable.length;
+            totalReqs = callable.length;
+            updateReqStatus();
+
+            activeWins.forEach(async (win) => {
+                let prompt = question;
+                let canCall = false;
+                let callType = '';
+                let callIndex = -1;
+
+                console.log('窗口配置:', win.id, 'source:', win.source, 'cozeIndex:', win.cozeIndex, 'platformIndex:', win.platformIndex);
+
+                if (win.source === 'coze') {
+                    const cw = config.coze.workflows[win.cozeIndex];
+                    console.log('Coze工作流配置:', cw);
+                    if (config.coze.apiToken && cw?.workflowId) {
+                        canCall = true;
+                        callType = 'coze';
+                        callIndex = win.cozeIndex;
+                        if (cw.systemPrompt) prompt = `${cw.systemPrompt}\n\n用户问题：${question}`;
+                        if (win.systemPrompt) prompt = `${win.systemPrompt}\n\n${prompt}`;
+                    } else {
+                        console.warn('Coze配置不完整: apiToken=', !!config.coze.apiToken, 'workflowId=', cw?.workflowId);
+                    }
+                } else if (win.source === 'platform' && win.platformIndex >= 0) {
+                    const pc = config.platforms[win.platformIndex];
+                    console.log('平台配置:', pc);
+                    if (pc?.connected && pc?.model) {
+                        canCall = true;
+                        callType = 'platform';
+                        callIndex = win.platformIndex;
+                        if (win.systemPrompt) prompt = `${win.systemPrompt}\n\n用户问题：${question}`;
+                    } else {
+                        console.warn('平台配置不完整: connected=', pc?.connected, 'model=', pc?.model);
+                    }
+                }
+
+                if (!canCall) {
+                    console.warn('窗口', win.id, '无法调用');
+                    return;
+                }
+
+                addMessage(win.id, question, 'user');
+                const msgIdx = addMessage(win.id, '', 'ai', true);
+
+                const stopBtn = document.querySelector(`.stop-win[data-id="${win.id}"]`);
+                if (stopBtn) stopBtn.disabled = false;
+
+                const controller = new AbortController();
+                abortControllers[win.id] = controller;
+
+                let fullAnswer = '';
+
+                try {
+                    const onChunk = (chunk) => {
+                        fullAnswer += chunk;
+                        // 不再压缩空行，直接更新
+                        updateMessage(win.id, msgIdx, fullAnswer, true);
+                    };
+
+                    if (callType === 'coze') {
+                        const convId = cozeConversationIds[win.id] || null;
+                        const cozeResult = await callCozeWorkflow(
+                            config.coze.workflows[callIndex].workflowId,
+                            prompt, onChunk, controller.signal, convId, null
+                        );
+                        if (cozeResult.convId) cozeConversationIds[win.id] = cozeResult.convId;
+                        // 联网来源面板现在由 updateMessage 函数自动处理
+                    } else if (callType === 'platform') {
+                        await callPlatformAPI(callIndex, prompt, onChunk, controller.signal);
+                    }
+
+                    const finalAnswer = fullAnswer || '（无输出）';
+                    updateMessage(win.id, msgIdx, finalAnswer, false);
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        updateMessage(win.id, msgIdx, '已停止', false);
+                    } else {
+                        updateMessage(win.id, msgIdx, `错误：${err.message}`, false);
+                    }
+                } finally {
+                    if (stopBtn) stopBtn.disabled = true;
+                    abortControllers[win.id] = null;
+                    onOneComplete();
+                }
+            });
+        }
+
+        // ==================== 渲染总结模型下拉菜单 ====================
+        function renderSummarySourceSelect() {
+            const select = document.getElementById('summarySourceSelect');
+            if (!select) return;
+            
+            const summaryWin = config.windows[3];
+            let options = '';
+            
+            // Coze工作流
+            const cozeGroup = config.coze.workflows.map((cw, ci) => {
+                const selected = summaryWin.source === 'coze' && summaryWin.cozeIndex === ci ? 'selected' : '';
+                return `<option value="coze:${ci}" ${selected}>${cw?.name || `工作流${ci + 1}`}</option>`;
+            }).join('');
+            
+            // 已连接的平台
+            const platformGroup = config.platforms.map((p, pi) => {
+                if (!p.connected) return '';
+                const selected = summaryWin.source === 'platform' && summaryWin.platformIndex === pi ? 'selected' : '';
+                return `<option value="platform:${pi}" ${selected}>${p.name}</option>`;
+            }).join('');
+            
+            if (cozeGroup) {
+                options += `<optgroup label="Coze工作流">${cozeGroup}</optgroup>`;
+            }
+            if (platformGroup) {
+                options += `<optgroup label="第三方API">${platformGroup}</optgroup>`;
+            }
+            
+            select.innerHTML = options;
+            
+            // 绑定切换事件
+            select.onchange = () => {
+                const value = select.value;
+                if (value.startsWith('coze:')) {
+                    summaryWin.source = 'coze';
+                    summaryWin.cozeIndex = parseInt(value.split(':')[1]);
+                    summaryWin.platformIndex = -1;
+                } else if (value.startsWith('platform:')) {
+                    summaryWin.source = 'platform';
+                    summaryWin.platformIndex = parseInt(value.split(':')[1]);
+                }
+                saveConfig();
+            };
+        }
+
+        // ==================== 生成总结 ====================
+        async function generateSummary() {
+            const summaryWin = config.windows[3];
+            let canCall = false;
+            let callType = '';
+            let callIndex = -1;
+
+            if (summaryWin.source === 'coze') {
+                const cw = config.coze.workflows[summaryWin.cozeIndex];
+                if (config.coze.apiToken && cw?.workflowId) {
+                    canCall = true;
+                    callType = 'coze';
+                    callIndex = summaryWin.cozeIndex;
+                } else {
+                    return showToast('请先配置Coze工作流ID', 'error');
+                }
+            } else if (summaryWin.source === 'platform' && summaryWin.platformIndex >= 0) {
+                const pc = config.platforms[summaryWin.platformIndex];
+                if (pc?.connected && pc?.model) {
+                    canCall = true;
+                    callType = 'platform';
+                    callIndex = summaryWin.platformIndex;
+                } else {
+                    return showToast('请先连接第三方API', 'error');
+                }
+            }
+
+            if (!canCall) return showToast('请先选择总结模型', 'error');
+
+            const answers = [];
+            for (let i = 0; i < 3; i++) {
+                const history = chatHistories[config.windows[i].id] || [];
+                const last = [...history].reverse().find(m => m.role === 'ai' && !m.loading);
+                if (last) {
+                    answers.push({ name: `窗口${i + 1}`, content: last.content });
+                }
+            }
+
+            if (!answers.length) return showToast('没有可总结的内容', 'warning');
+
+            let prompt = `【用户问题】\n${latestQuestion}\n\n【各模型回答】\n`;
+            answers.forEach(a => prompt += `\n--- ${a.name} ---\n${a.content}\n`);
+            prompt += '\n【请总结对比以上回答】';
+
+            const container = document.getElementById('messages-summary');
+            container.innerHTML = '<div class="message message-ai message-loading">正在生成总结...</div>';
+
+            const controller = new AbortController();
+            let fullAnswer = '';
+
+            try {
+                const onChunk = (chunk) => {
+                    fullAnswer += chunk;
+                    container.innerHTML = `<div class="message message-ai">${renderMarkdown(fullAnswer)}<button class="copy-btn" style="opacity:1" onclick="navigator.clipboard.writeText(\`${fullAnswer.replace(/`/g, '\\`')}\`);this.textContent='已复制'">复制</button></div>`;
+                    container.scrollTop = container.scrollHeight;
+                };
+
+                if (callType === 'coze') {
+                    await callCozeWorkflow(config.coze.workflows[callIndex].workflowId, prompt, onChunk, controller.signal);
+                } else if (callType === 'platform') {
+                    await callPlatformAPI(callIndex, prompt, onChunk, controller.signal);
+                }
+
+                if (!fullAnswer) container.innerHTML = '<div class="message message-ai">（无输出）</div>';
+            } catch (err) {
+                container.innerHTML = `<div class="message message-ai" style="color:var(--danger-color)">错误：${err.message}</div>`;
+            }
+        }
+
+        document.getElementById('generateSummaryBtn').addEventListener('click', generateSummary);
+
+        // ==================== 输入框 ====================
+        const userInput = document.getElementById('userInput');
+        userInput.addEventListener('input', () => {
+            document.getElementById('charCount').textContent = `${userInput.value.length} 字`;
+        });
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+
+        // ==================== 初始化 ====================
+        function loadConfig() {
+            document.getElementById('cozeApiToken').value = config.coze.apiToken || '';
+            document.getElementById('cozeBaseUrl').value = config.coze.baseUrl || 'https://api.coze.cn';
+            document.getElementById('cozeBotId').value = config.coze.botId || '';
+            document.getElementById('cozeInputVariable').value = config.coze.inputVariable || 'USER_INPUT';
+            
+            if (config.theme !== 'default') {
+                document.body.setAttribute('data-theme', config.theme);
+            }
+            document.documentElement.style.setProperty('--font-size', config.fontSize);
+            
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.toggle('btn-primary', btn.dataset.theme === config.theme);
+                btn.classList.toggle('btn-secondary', btn.dataset.theme !== config.theme);
+            });
+            document.querySelectorAll('.font-btn').forEach(btn => {
+                btn.classList.toggle('btn-primary', btn.dataset.size === config.fontSize);
+                btn.classList.toggle('btn-secondary', btn.dataset.size !== config.fontSize);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            winCount = config.windowCount || 3;
+            renderCozeWorkflowList();
+            renderPlatformList();
+            renderChatWindows();
+            renderSummarySourceSelect();
+            updateConfigStatus();
+
+            // 窗口数量控件
+            document.getElementById('wcDec').addEventListener('click', () => setWinCount(winCount - 1));
+            document.getElementById('wcInc').addEventListener('click', () => setWinCount(winCount + 1));
+
+            // hljs 主题跟随切换
+            function syncHljsTheme() {
+                const dark = document.body.getAttribute('data-theme') === 'dark';
+                document.getElementById('hljs-light').disabled = dark;
+                document.getElementById('hljs-dark').disabled = !dark;
+            }
+            syncHljsTheme();
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.addEventListener('click', () => setTimeout(syncHljsTheme, 30));
+            });
+
+            // 行距、字间距、段落间距滑块
+            function applyDisplaySettings() {
+                const lh = document.getElementById('lineHeightSlider').value;
+                const ls = document.getElementById('letterSpacingSlider').value;
+                const ps = document.getElementById('paraSpacingSlider').value;
+                document.getElementById('lineHeightVal').textContent = lh;
+                document.getElementById('letterSpacingVal').textContent = ls + 'px';
+                document.getElementById('paraSpacingVal').textContent = ps + 'px';
+                // 动态注入样式
+                let styleEl = document.getElementById('dynamic-display-style');
+                if (!styleEl) {
+                    styleEl = document.createElement('style');
+                    styleEl.id = 'dynamic-display-style';
+                    document.head.appendChild(styleEl);
+                }
+                styleEl.textContent = `
+                    .message-ai { line-height: ${lh}; letter-spacing: ${ls}px; }
+                    .message-ai p { margin: ${ps}px 0; line-height: ${lh}; }
+                    .message-ai li { line-height: ${lh}; }
+                `;
+                // 保存到 config
+                config.displaySettings = { lineHeight: lh, letterSpacing: ls, paraSpacing: ps };
+                saveConfig();
+            }
+
+            // 从 config 恢复
+            if (config.displaySettings) {
+                const ds = config.displaySettings;
+                document.getElementById('lineHeightSlider').value = ds.lineHeight || 1.6;
+                document.getElementById('letterSpacingSlider').value = ds.letterSpacing || 0;
+                document.getElementById('paraSpacingSlider').value = ds.paraSpacing || 4;
+                applyDisplaySettings();
+            }
+
+            ['lineHeightSlider', 'letterSpacingSlider', 'paraSpacingSlider'].forEach(id => {
+                document.getElementById(id).addEventListener('input', applyDisplaySettings);
+            });
+        });
+    </script>
+</body>
+</html>
